@@ -1,0 +1,94 @@
+---
+title: "HmWk8.2"
+author: "student"
+date: "2023-09-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 8.2
+
+*Using crime data from http://www.statsci.org/data/general/uscrime.txt (file uscrime.txt, description at http://www.statsci.org/data/general/uscrime.html ), use regression (a useful R function is lm or glm) to predict the observed crime rate in a city with the following data:*
+
+| Variable | Value  | Description                                                                                                |
+|----------|-------|------------------------------------------------------------------------------------------------------------|
+| M        | 14.0  | percentage of males aged 14–24 in total state population                                                    |
+| So       | 0     | indicator variable for a southern state                                                                     |
+| Ed       | 10.0  | mean years of schooling of the population aged 25 years or over                                             |
+| Po1      | 12.0  | per capita expenditure on police protection in 1960                                                         |
+| Po2      | 15.5  | per capita expenditure on police protection in 1959                                                         |
+| LF       | 0.640 | labour force participation rate of civilian urban males in the age-group 14-24                              |
+| M.F      | 94.0  | number of males per 100 females                                                                             |
+| Pop      | 150   | state population in 1960 in hundred thousands                                                               |
+| NW       | 1.1   | percentage of nonwhites in the population                                                                   |
+| U1       | 0.120 | unemployment rate of urban males 14–24                                                                      |
+| U2       | 3.6   | unemployment rate of urban males 35–39                                                                      |
+| Wealth   | 3200  | wealth: median value of transferable assets or family income                                                |
+| Ineq     | 20.1  | income inequality: percentage of families earning below half the median income                              |
+| Prob     | 0.04  | probability of imprisonment: ratio of number of commitments to number of offenses                           |
+| Time     | 39.   | average time in months served by offenders in state prisons before their first release                      |
+| Crime    | -     | crime rate: number of offenses per 100,000 population in 1960                                               |
+
+
+*Show your model (factors(predictors) used and their coefficients), the software output(single predication), and the quality of fit(R squared, p-value). Note that because there are only 47 data points and 15 predictors, you’ll probably notice some overfitting. We’ll see ways of dealing with this sort of problem later in the course.*
+
+
+1. What does scaling the response do?
+
+2. What does scaling the predictors do?
+
+3. What is the meaning of the regression coefficients?
+
+4. What is the relationship between the regression coefficient and the corresponding predictor?
+
+Load Libraries
+```{r}
+library(readr)
+```
+
+Load Data
+```{r}
+uscrime_data <- read.csv("C:\\Users\\Public\\Documents\\gatech\\crime.csv")
+
+head(data)
+```
+
+Fit the Model
+```{r echo=FALSE}
+model <- lm(Crime ~ M + So + Ed + Po1 + Po2 + LF + M.F + Pop + NW + U1 + U2 + Wealth + Ineq + Prob + Time, data = uscrime_data)
+summary(model)
+```
+Predict the Crime
+*The model predicts a crime rate of approximately 155.4 offenses per 100,000 people in that year.*
+```{r}
+new_data <- data.frame(M = 14.0, So = 0, Ed = 10.0, Po1 = 12.0, Po2 = 15.5, LF = 0.640, M.F = 94.0, Pop = 150, NW = 1.1, U1 = 0.120, U2 = 3.6, Wealth = 3200, Ineq = 20.1, Prob = 0.04, Time = 39.0)
+predicted_crime <- predict(model, newdata = new_data)
+print(predicted_crime)
+```
+Plot Model
+```{r}
+plot(model)
+```
+model_glm_poisson
+```{r}
+model_glm_poisson <- glm(Crime ~ M + So + Ed + Po1 + Po2 + LF + M.F + Pop + NW + U1 + U2 + Wealth + Ineq + Prob + Time, 
+                         family = poisson(), data = uscrime_data)
+summary(model_glm_poisson)
+```
+Plot
+```{r}
+plot(model_glm_poisson) 
+```
+model_glm_gamma
+```{r}
+model_glm_gamma <- glm(Crime ~ M + So + Ed + Po1 + Po2 + LF + M.F + Pop + NW + U1 + U2 + Wealth + Ineq + Prob + Time, 
+                       family = Gamma(link="log"), data = uscrime_data)
+summary(model_glm_gamma)
+```
+glm
+```{r}
+plot(model_glm_gamma)
+```

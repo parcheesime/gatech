@@ -1,0 +1,158 @@
+---
+title: "hmwk6.2A"
+author: "student"
+date: "2023-09-10"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## CUSUM Part 1
+
+Part 1: Using July through October daily-high-temperature data for Atlanta for 1996 through 2015, use
+a CUSUM approach to identify when unofficial summer ends (i.e., when the weather starts
+cooling off) each year.
+
+**Summary**
+
+*First things first, I eyeballed the temperature data and picked months that seemed to be pretty stable, year-over-year — July and August, in this case. I wanted to get a sense of what "normal" looks like, so I calculated the average high temperature for these two summer months for each year over a 20-year span. Think of this as my baseline or "critical value" (I'm calling it ref_value in the code).*
+
+*Onto the hard part: setting the threshold! I played around with a bunch of numbers, but ultimately I used a range between -35 to -40, this is the CUSUM formula at play: cusum <- cusum + (yearly_data$Temperature[i] - ref_value). So it’s basically the running sum of how far off each day's temperature is from my average 'critical value.'*
+
+*The kicker: when I looked at the results, it turned out that most years signaled the end of Atlanta's summer in September( maybe a clustering model at this point might be good!). This actually made sense because, when I checked out a time series plot of average high temperatures, there's a noticeable dip starting around August and going into September.*
+
+*That's how I used CUSUM to decode Atlanta's end of summer days. The last pages is a running table of CUSUM calculations, just for because I was curious to see it in action.*
+
+Load Libraries
+```{r}
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(zoo)
+```
+
+## CUSUM
+Get Data
+```{r}
+# construct the file path
+file_path <- paste0("C:\\Users\\Public\\Documents\\gatech\\hw3-FA23\\data 6.2\\temps.txt")
+
+# read in the data
+weather_data <- read.table(file_path, header = TRUE)
+
+#view data
+tail(weather_data)
+```
+
+Aggregate Plot
+```{r}
+# convert DAY column to date format
+weather_data$DAY <- as.Date(weather_data$DAY, format="%d-%b")
+
+# convert to long format
+long_data <- tidyr::pivot_longer(weather_data, cols=-DAY, names_to="Year", values_to="Temperature")
+
+# extract month and add as new column
+long_data$Month <- format(long_data$DAY, "%b")
+
+# calculate monthly averages
+monthly_avg <- dplyr::group_by(long_data, Year, Month)
+monthly_avg <- dplyr::summarise(monthly_avg, Avg_Temperature = mean(Temperature, na.rm=TRUE))
+
+# month as an ordered factor in monthly_avg
+monthly_avg$Month <- factor(monthly_avg$Month, levels=c("Jul", "Aug", "Sep", "Oct"))
+
+# plot monthly averages for each year
+ggplot2::ggplot(monthly_avg, ggplot2::aes(x=Month, y=Avg_Temperature, group=Year, color=Year)) +
+  ggplot2::geom_line() +
+  ggplot2::labs(title="Monthly Average Temperatures", x="Month", y="Average Temperature (°F)")
+
+# group by year and month, then calculate average temperature for each month
+monthly_avg <- dplyr::group_by(long_data, Year, Month)
+monthly_avg <- dplyr::summarise(monthly_avg, Avg_Temperature = mean(Temperature, na.rm=TRUE))
+
+# calc average daily high and lowest average high temperature with month
+min_max_avg_per_year <- dplyr::group_by(monthly_avg, Year)
+min_max_avg_per_year <- dplyr::summarise(
+  min_max_avg_per_year,
+  Average_Daily_High = mean(Avg_Temperature, na.rm=TRUE),
+  Min_AVG_Temperature = min(Avg_Temperature, na.rm=TRUE),
+  Min_Month = Month[which.min(Avg_Temperature)],
+  Max_AVG_Temperature = max(Avg_Temperature, na.rm=TRUE),
+  Max_Month = Month[which.max(Avg_Temperature)]
+)
+
+# Print summary
+print(paste("Metrics for each year:"))
+print(min_max_avg_per_year)
+
+```
+Apply CUSUM
+```{r}
+# Initialize empty data frame to store end-of-summer days and CUSUM calculations
+end_of_summer <- data.frame(Year=integer(), Day=as.Date(character()))
+cusum_data <- data.frame(Year=integer(), Day=as.Date(character()), Temperature=numeric(), Ref_Value=numeric(), CUSUM=numeric())
+
+# loop through each unique year in the dataset
+for (year in unique(long_data$Year)) {
+  
+  # data for the current year
+  yearly_data <- dplyr::filter(long_data, Year == year)
+  
+  # data for July and August for specific year
+  jul_aug_data_year <- dplyr::filter(yearly_data, Month %in% c("July", "Aug"))
+  
+  # average high temperature for July and August for specific year
+  ref_value <- mean(jul_aug_data_year$Temperature, na.rm=TRUE)
+  
+  # initialize CUSUM variable
+  cusum <- 0
+  
+  # loop through each day in this year
+  for (i in 1:nrow(yearly_data)) {
+    cusum <- cusum + (yearly_data$Temperature[i] - ref_value)
+    
+    # add CUSUM data to cusum_data
+    cusum_data <- rbind(cusum_data, data.frame(
+      Year=year,
+      Day=yearly_data$DAY[i],
+      Temperature=yearly_data$Temperature[i],
+      Ref_Value=ref_value,
+      CUSUM=cusum
+    ))
+    
+    # try different thresholds
+    if (cusum < -40) {
+      end_of_summer <- rbind(end_of_summer, data.frame(Year=year, Day=yearly_data$DAY[i]))
+      break
+    }
+  }
+}
+
+# display the days that indicate the end of unofficial summer for each year
+print("End of unofficial summer for each year:")
+print(end_of_summer)
+
+```
+
+Plot the end of summer days
+```{r}
+# plot the end_of_summer data
+ggplot(end_of_summer, aes(x=Year, y=Day)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("End of Unofficial Summer for Each Year") +
+  xlab("Year") +
+  ylab("Day")
+```
+View Full CUSUM Calculations
+```{r}
+# display the CUSUM calculations
+print("CUSUM calculations:")
+print(cusum_data)
+```

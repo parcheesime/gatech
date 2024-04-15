@@ -1,0 +1,122 @@
+---
+title: "hmwk3.1a"
+author: "student"
+date: "2023-09-05"
+output: pdf_document
+---
+
+## Cross Validation
+
+**Summary**
+
+*Number of Nearest Neighbors: best k: 7 neighbors yielded the highest accuracy.*
+
+*Accuracy of best k: 85.9% of the test samples the model made correct prediction.*  
+
+*Model Accuracy: 82.23% of the time the model is correct.*
+
+*Confidence Interval: 95% interval accuracy falls in.*
+
+*No Information Rate: 0.5584, success rate with no model prediction.*
+
+**It appears the classifier performs reasonably well given the context of this data set.**
+
+
+##Begin Code
+
+
+
+**Load the packages**
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(kknn)
+library(kernlab)
+library(caTools)
+library(caret)
+```
+**Load and View Data Structure**
+```{r}
+# load data
+data <- read.csv("C:\\Users\\Public\\Documents\\gatech\\hw1\\credit_card_with_headers.csv")
+
+# check data structure for data frame
+str(data)
+```
+**Split data into two distinct data sets, using random sampling without replacement**
+```{r}
+set.seed(123)
+indexes <- sample(1:nrow(data), size = nrow(data) * 0.7)
+data1 <- data[indexes,]
+data2 <- data[-indexes,]
+```
+**Perpare the data**
+```{r}
+library(caret)
+
+# Convert the target variable to factor
+data1$R1 <- as.factor(data1$R1)
+data2$R1 <- as.factor(data2$R1)
+```
+**Set up cross-validation, split data1 into different pieces (folds).**
+```{r}
+# Setting up k-fold cross-validation
+cvCtrl <- trainControl(method = "cv", number = 10)  # 10-fold Cross validation
+```
+**Train K-NN model: the model will take turns using 9 of the folds for training and 1 fold for validation, iterating this process 10 times so that each fold is used as a validation set exactly once.**
+```{r}
+# Define the k values you want to try
+k_values = expand.grid(k = seq(from = 1, to = 10, by = 1))
+
+# Train the k-NN model with different k values
+knnFit <- train(
+  R1 ~ ., 
+  data = data1, 
+  method = "knn",
+  trControl = cvCtrl,
+  preProcess = c("center", "scale"),
+  tuneGrid = k_values
+)
+
+# Summary of the k-NN model
+# print(knnFit)
+
+best_k <- knnFit$bestTune$k
+best_accuracy <- max(knnFit$results$Accuracy)
+cat("Best k:", best_k, "\n")
+cat("Best accuracy:", best_accuracy, "\n")
+
+
+```
+**Report Acuracy: The best number of neighbors, 7, has 0.859 accuracy, or how often the model correctly classifies the samples in the evaluation set.**
+**Evaluate the model on data2**
+```{r}
+
+# Evaluate the model on the test set (data2)
+predictions <- predict(knnFit, newdata = data2)
+```
+**Summary**
+
+84 (TN): The number of times the model correctly predicted class '0'.
+
+78 (TP): The number of times the model correctly predicted class '1'.
+
+9 (FP): The number of times the model incorrectly predicted class '0' as class '1'.
+
+26 (FN): The number of times the model incorrectly predicted class '1' as class '0'.
+
+Model Accuracy: 82.23%
+
+Confidence Interval: 95%
+
+No Information Rate: 0.5584, success rate with no model prediction.
+
+P-Value: indicates model is significantly better than a no-information rate.
+
+Mcnemar's Test P-Value: Used to compare the performance of two classifiers.
+
+It appears the classifier performs reasonably well given the context of this data set.
+```{r}
+confusionMatrix(predictions, data2$R1)
+
+```
