@@ -6,7 +6,7 @@ Welcome to my personal repository for the Georgia Tech Online Master of Science 
 
 This repository is organized by course modules and includes a variety of topics such as Python programming, R scripting, statistical analysis, machine learning models, and simulations. Each directory/folder is dedicated to specific subjects or projects to demonstrate my skills and learning progression throughout the OMSA program.
 
-## Repository Structure
+## Repository Elements
 
 - **Python**
   - Projects and exercises focusing on data manipulation, visualization, and machine learning implementations using Python.
