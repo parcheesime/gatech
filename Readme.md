@@ -1,6 +1,6 @@
-# Georgia Tech OMSA Data Analytics Portfolio
+# Georgia Tech Data Analytics Portfolio
 
-Welcome to my personal repository for the Georgia Tech Online Master of Science in Analytics (OMSA) program. This repository contains projects, assignments, and other practical applications of data analytics and machine learning that I've completed as part of this graduate program.
+Welcome to my personal repository for some classwork of the Georgia Tech Data Analytics program. This repository contains projects, assignments, and other practical applications of data analytics and machine learning that I've completed as part of this graduate program.
 
 ## Overview
 
